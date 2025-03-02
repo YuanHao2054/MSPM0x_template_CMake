@@ -6,7 +6,7 @@
 
 依赖当前系统中的交叉编译工具链和MSPM0系列单片机的SDK。
 
-工程结构：
+**工程结构：**
 
 ```bash
 project
@@ -56,7 +56,20 @@ message(STATUS "Loading toolchain: ${CMAKE_TOOLCHAIN_FILE}")
 set(MSPM0_SDK_DIR "E:/software/TI/m0_sdk/mspm0_sdk_2_02_00_05" CACHE PATH "MSPM0 SDK 路径")
 ```
 
-### 3、编译流程
+### 3、设置启动文件
+在`./CMakeLists.txt`中进行设置
+
+这里设置的是`mspm0g350x`系列单片机，如果是其他系列，启动文件也应该在这里，需要改文件名。以具体文件路径为准
+
+```cmake
+list(APPEND SOURCE_FILES
+    "${PROJECT_SOURCE_DIR}/syscfg/ti_msp_dl_config.c"           # 添加 syscfg 生成的文件
+    "${MSPM0_SDK_DIR}/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c"  # 添加启动文件
+)
+```
+
+
+### 4、编译流程
 
 本工程默认使用CMake+ninja的方法，也可以使用cmake+make
 
@@ -73,7 +86,7 @@ cmake --build build --target all
 
 # 清理工程，删除build目录
 cmd /c "rmdir /s /q build && rmdir /s /q .cache" # windows的powershell
-rm -rf build									 # linux的bash
+rm -rf build					 # linux的bash
 ```
 
 ## 二、常见问题

@@ -17,15 +17,6 @@ set(MSPM0_SDK_DIR "E:/software/TI/m0_sdk/mspm0_sdk_2_02_00_05" CACHE PATH "MSPM0
 set(PROJECT_SYSCFG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/syscfg")
 set(PROJECT_SYSCFG_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.syscfg")
 
-# 编译选项（保持与Makefile完全一致）
-# set(CMAKE_C_FLAGS 
-#     "-I${CMAKE_CURRENT_SOURCE_DIR}" 
-#     "-I${PROJECT_SYSCFG_DIR}"
-#     "-I${MSPM0_SDK_DIR}/source"
-#     "-I${MSPM0_SDK_DIR}/source/third_party/CMSIS/Core/Include"
-#     "-O2 -gdwarf-3 -mcpu=cortex-m0plus -mthumb -mfloat-abi=soft"
-#     "-ffunction-sections -fdata-sections -nostdlib"
-# )
 add_compile_options(
     -O2
     -gdwarf-3
@@ -61,7 +52,8 @@ file(GLOB SOURCE_FILES
 )
 
 list(APPEND SOURCE_FILES
-    "${PROJECT_SOURCE_DIR}/syscfg/ti_msp_dl_config.c"
+    "${PROJECT_SOURCE_DIR}/syscfg/ti_msp_dl_config.c"           # 添加 syscfg 生成的文件
+    "${MSPM0_SDK_DIR}/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c"  # 添加启动文件
 )
 
 # 可执行目标
@@ -69,9 +61,10 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 # 链接配置
 target_link_options(${PROJECT_NAME} PRIVATE
-    "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
+    # "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
+    "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.lds"
     "-Wl,-m,${PROJECT_NAME}.map"
-    "-Wl,-u,_c_int00"
+    "-Wl,--entry=_c_int00"
     "-Wl,--rom_model"
     "-Wl,--warn_sections"
     "-L${MSPM0_SDK_DIR}/source"
@@ -80,6 +73,15 @@ target_link_options(${PROJECT_NAME} PRIVATE
     "-llibsysbm.a"  # 添加 libsysbm.a
     "-llibc.a"      # 添加 libc.a
 )
+
+# 链接库
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    sysbm
+    c
+    # ${ARM_COMPILER_ROOT}/lib/libsysbm.a
+    # ${ARM_COMPILER_ROOT}/lib/libc.a
+)
+
 
 # 输出目录配置
 set_target_properties(${PROJECT_NAME} PROPERTIES

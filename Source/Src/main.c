@@ -6,6 +6,10 @@ int main()
     // Initialize the device
 
     SYSCFG_DL_init();
-    return 0;
+    
+    while(1)
+    {
+        // Run the device
+    }
 
 }

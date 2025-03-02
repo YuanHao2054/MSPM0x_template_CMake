@@ -20,5 +20,8 @@
             "task": "Clean",
             "tooltip": "Build the project"
         }
-    ]
+    ],
+    "files.associations": {
+        "stdint.h": "c"
+    }
 }
