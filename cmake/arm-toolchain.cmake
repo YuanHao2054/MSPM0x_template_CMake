@@ -1,0 +1,15 @@
+# arm-toolchain.cmake
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+# 编译器路径设置
+set(TI_ARM_COMPILER_ROOT "E:/software/TI/ti_cgt_armllvm")
+set(CMAKE_C_COMPILER "${TI_ARM_COMPILER_ROOT}/bin/tiarmclang.exe")
+set(CMAKE_CXX_COMPILER "${TI_ARM_COMPILER_ROOT}/bin/tiarmclang.exe")
+set(CMAKE_ASM_COMPILER "${TI_ARM_COMPILER_ROOT}/bin/tiarmclang.exe")
+
+# 交叉编译配置
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
