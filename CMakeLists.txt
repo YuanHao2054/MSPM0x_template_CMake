@@ -10,12 +10,18 @@ project(template)
 # 启用生成 compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# 启用 Ninja 颜色支持
+add_compile_options(-fdiagnostics-color=always)
+
 # 定义 SDK 路径
 set(MSPM0_SDK_DIR "E:/software/TI/m0_sdk/mspm0_sdk_2_02_00_05" CACHE PATH "MSPM0 SDK 路径")
 
 # 定义syscfg相关路径变量
 set(PROJECT_SYSCFG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/syscfg")
 set(PROJECT_SYSCFG_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.syscfg")
+
+# 读取device.opt文件，获取芯片型号，添加进编译选项
+file(READ "${PROJECT_SYSCFG_DIR}/device.opt" DEVICE_OPT)
 
 add_compile_options(
     -O2
@@ -28,9 +34,8 @@ add_compile_options(
     -nostdlib
 )
 
-add_compile_definitions(
-    DeviceFamily_MSPM0G
-)
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEVICE_OPT}")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEVICE_OPT}")
 
 add_compile_definitions(
     __MSPM0G3507__
@@ -44,6 +49,7 @@ include_directories(
     "${MSPM0_SDK_DIR}/source/third_party/CMSIS/Core/Include"
     "${PROJECT_SOURCE_DIR}/Source/Inc"
     "${PROJECT_SOURCE_DIR}/syscfg"
+    "${MSPM0_SDK_DIR}/source/ti/driverlib/"
 )
 
 # 动态获取源文件列表
@@ -64,22 +70,20 @@ target_link_options(${PROJECT_NAME} PRIVATE
     # "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
     "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.lds"
     "-Wl,-m,${PROJECT_NAME}.map"
-    "-Wl,--entry=_c_int00"
+    "-Wl,--entry_point=_c_int00"
     "-Wl,--rom_model"
     "-Wl,--warn_sections"
     "-L${MSPM0_SDK_DIR}/source"
     "-L${PROJECT_SOURCE_DIR}"
     "-L$ENV{TICLANG_ARMCOMPILER}/lib"  # 指定库文件路径
-    "-llibsysbm.a"  # 添加 libsysbm.a
-    "-llibc.a"      # 添加 libc.a
 )
 
 # 链接库
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    sysbm
-    c
-    # ${ARM_COMPILER_ROOT}/lib/libsysbm.a
-    # ${ARM_COMPILER_ROOT}/lib/libc.a
+    # sysbm
+    # c
+    ${ARM_COMPILER_ROOT}/lib/libsysbm.a
+    ${ARM_COMPILER_ROOT}/lib/libc.a
 )
 
 
@@ -88,6 +92,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)
+
+# 添加自定义命令生成 .bin 文件
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>/${PROJECT_NAME}.bin
+    COMMENT "Generating file"
 )
 
 # 清理规则
