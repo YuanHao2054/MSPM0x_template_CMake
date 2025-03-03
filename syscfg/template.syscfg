@@ -15,8 +15,11 @@ const GPIO1 = GPIO.addInstance();
 /**
  * Write custom configuration values to the imported modules.
  */
-GPIO1.$name                   = "GPIO_GRP_0";
-GPIO1.associatedPins[0].$name = "PIN_0";
+GPIO1.$name                              = "LED1";
+GPIO1.port                               = "PORTB";
+GPIO1.associatedPins[0].$name            = "PIN_22";
+GPIO1.associatedPins[0].assignedPin      = "22";
+GPIO1.associatedPins[0].internalResistor = "PULL_DOWN";
 
 const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
 
@@ -30,7 +33,7 @@ ProjectConfig.migrationCondition = true;
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
  * re-solve from scratch.
  */
-GPIO1.associatedPins[0].pin.$suggestSolution = "PB13";
+GPIO1.associatedPins[0].pin.$suggestSolution = "PB22";
 Board.peripheral.$suggestSolution            = "DEBUGSS";
 Board.peripheral.swclkPin.$suggestSolution   = "PA20";
 Board.peripheral.swdioPin.$suggestSolution   = "PA19";

@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug MSPM0G3507",
+            "cwd": "${workspaceFolder}/build/bin",
+            "executable": "template.out",  // 替换为你的可执行文件名
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "./interface/cmsis-dap.cfg",      // 调试接口配置
+                "./board/ti_mspm0_launchpad.cfg"  // 开发板配置
+            ],
+            "searchDir": [
+                "\"C:/Users/20541/AppData/Local/Texas Instruments/ti-embedded-debug/openocd/20250131/share/openocd/scripts\""
+            ],
+            "runToEntryPoint": "main",       // 调试启动后运行到 main 函数
+            "deviceName": "MSPM0G3507",      // 设备型号（用于查看寄存器）
+            "showDevDebugOutput": "none"
+        }
+    ]
+}

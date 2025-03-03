@@ -18,10 +18,16 @@ set(MSPM0_SDK_DIR "E:/software/TI/m0_sdk/mspm0_sdk_2_02_00_05" CACHE PATH "MSPM0
 
 # 定义syscfg相关路径变量
 set(PROJECT_SYSCFG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/syscfg")
-set(PROJECT_SYSCFG_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.syscfg")
+set(PROJECT_SYSCFG_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/syscfg/${PROJECT_NAME}.syscfg")
 
-# 读取device.opt文件，获取芯片型号，添加进编译选项
-file(READ "${PROJECT_SYSCFG_DIR}/device.opt" DEVICE_OPT)
+# # 读取 device.opt 文件内容
+# file(READ "syscfg/device.opt" DEVICE_OPT_CONTENTS)
+# string(STRIP "${DEVICE_OPT_CONTENTS}" DEVICE_OPT_CONTENTS)
+
+# # 添加为编译选项
+# target_compile_options(${PROJECT_NAME} PRIVATE
+#     ${DEVICE_OPT_CONTENTS}
+# )
 
 add_compile_options(
     -O2
@@ -67,8 +73,8 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 # 链接配置
 target_link_options(${PROJECT_NAME} PRIVATE
-    # "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
-    "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.lds"
+    "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
+    # "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.lds"
     "-Wl,-m,${PROJECT_NAME}.map"
     "-Wl,--entry_point=_c_int00"
     "-Wl,--rom_model"
@@ -84,6 +90,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     # c
     ${ARM_COMPILER_ROOT}/lib/libsysbm.a
     ${ARM_COMPILER_ROOT}/lib/libc.a
+    ${MSPM0_SDK_DIR}/source/ti/driverlib/lib/ticlang/m0p/mspm0g1x0x_g3x0x/driverlib.a
 )
 
 
