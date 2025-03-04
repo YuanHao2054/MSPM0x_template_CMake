@@ -1,114 +1,109 @@
-cmake_minimum_required(VERSION 3.15)
+# CMake最低版本 
+cmake_minimum_required(VERSION 3.20)
+# 项目名称
+set(PROJECT_NAME "empty")
+# 链接脚本路径  位于SDK目录下source\ti\devices\msp\m0p\linker_files\gcc\MSPM0L1306.lds
+#   因为vscode默认配置是在build/下，所以这里设置成了../
+set (LINKER_SCRIPT            "../MSPM0G3507.lds")
+# 构建类型为Debug  
+set (CMAKE_BUILD_TYPE         Debug)
 
-# 加载工具链文件
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/arm-toolchain.cmake")
-message(STATUS "Loading toolchain: ${CMAKE_TOOLCHAIN_FILE}")
-
-# 声明项目
-project(template)
-
-# 启用生成 compile_commands.json
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# 启用 Ninja 颜色支持
-add_compile_options(-fdiagnostics-color=always)
-
-# 定义 SDK 路径
-set(MSPM0_SDK_DIR "E:/software/TI/m0_sdk/mspm0_sdk_2_02_00_05" CACHE PATH "MSPM0 SDK 路径")
-
-# 定义syscfg相关路径变量
-set(PROJECT_SYSCFG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/syscfg")
-set(PROJECT_SYSCFG_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/syscfg/${PROJECT_NAME}.syscfg")
-
-# # 读取 device.opt 文件内容
-# file(READ "syscfg/device.opt" DEVICE_OPT_CONTENTS)
-# string(STRIP "${DEVICE_OPT_CONTENTS}" DEVICE_OPT_CONTENTS)
-
-# # 添加为编译选项
-# target_compile_options(${PROJECT_NAME} PRIVATE
-#     ${DEVICE_OPT_CONTENTS}
-# )
-
-add_compile_options(
-    -O2
-    -gdwarf-3
-    -mcpu=cortex-m0plus
-    -mthumb
-    -mfloat-abi=soft
-    -ffunction-sections
-    -fdata-sections
-    -nostdlib
+# 使用GLOB命令收集项目源文件（注意：GLOB通常不推荐用于生产级项目） 
+## 注意：GLOB命令会匹配所有符合条件的文件，因此可能匹配到不需要的文件，需要手动排除
+#### Core/src/main.c 主函数入口
+#### Core/src/ti_msp_dl_config.c sysconfig生成的配置文件
+file (GLOB PROJECT_SOURCES
+    Core/*.c
+    Driver/ti/driverlib/*.c
+    Driver/ti/driverlib/m0p/*.c
+    Driver/ti/driverlib/m0p/sysctl/*.c
+)
+ 
+# 设置编译器定义 
+set (PROJECT_DEFINES
+	# LIST COMPILER DEFINITIONS HERE
+	__MSPM0G3507__
 )
 
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEVICE_OPT}")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEVICE_OPT}")
-
-add_compile_definitions(
-    __MSPM0G3507__
-    __TI_ARM__
-    __TI_ARM_CLANG_VERSION=3001000
-)
-
-# 包含目录
-include_directories(
-    "${MSPM0_SDK_DIR}/source"
-    "${MSPM0_SDK_DIR}/source/third_party/CMSIS/Core/Include"
-    "${PROJECT_SOURCE_DIR}/Source/Inc"
-    "${PROJECT_SOURCE_DIR}/syscfg"
-    "${MSPM0_SDK_DIR}/source/ti/driverlib/"
-)
-
-# 动态获取源文件列表
-file(GLOB SOURCE_FILES
-    "${PROJECT_SOURCE_DIR}/Source/Src/*.c"
-)
-
-list(APPEND SOURCE_FILES
-    "${PROJECT_SOURCE_DIR}/syscfg/ti_msp_dl_config.c"           # 添加 syscfg 生成的文件
-    "${MSPM0_SDK_DIR}/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c"  # 添加启动文件
-)
-
-# 可执行目标
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-
-# 链接配置
-target_link_options(${PROJECT_NAME} PRIVATE
-    "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.cmd"
-    # "-Wl,-t${PROJECT_SOURCE_DIR}/syscfg/device_linker.lds"
-    "-Wl,-m,${PROJECT_NAME}.map"
-    "-Wl,--entry_point=_c_int00"
-    "-Wl,--rom_model"
-    "-Wl,--warn_sections"
-    "-L${MSPM0_SDK_DIR}/source"
-    "-L${PROJECT_SOURCE_DIR}"
-    "-L$ENV{TICLANG_ARMCOMPILER}/lib"  # 指定库文件路径
-)
-
-# 链接库
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    # sysbm
-    # c
-    ${ARM_COMPILER_ROOT}/lib/libsysbm.a
-    ${ARM_COMPILER_ROOT}/lib/libc.a
-    ${MSPM0_SDK_DIR}/source/ti/driverlib/lib/ticlang/m0p/mspm0g1x0x_g3x0x/driverlib.a
+# 设置包含目录 
+set (PROJECT_INCLUDES
+	# LIST INCLUDE DIRECTORIES HERE
+    Core
+    Driver/CMSIS/Core/Include
+    Driver
 )
 
 
-# 输出目录配置
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-)
 
-# 添加自定义命令生成 .bin 文件
+# 编译工具链设置 
+## 使用arm-none-eabi-gcc工具链  
+## 从path环境变量中获取工具链路径
+set(CMAKE_SYSTEM_NAME               Generic)
+set(CMAKE_SYSTEM_PROCESSOR          arm)
+set(CMAKE_C_COMPILER_FORCED TRUE)
+set(CMAKE_CXX_COMPILER_FORCED TRUE)
+set(CMAKE_C_COMPILER_ID GNU)
+set(CMAKE_CXX_COMPILER_ID GNU)
+set(TOOLCHAIN_PREFIX                arm-none-eabi-)
+set(CMAKE_C_COMPILER                ${TOOLCHAIN_PREFIX}gcc)
+set(CMAKE_ASM_COMPILER              ${CMAKE_C_COMPILER}) 
+set(CMAKE_CXX_COMPILER              ${TOOLCHAIN_PREFIX}g++)
+set(CMAKE_LINKER                    ${TOOLCHAIN_PREFIX}ld)
+set(CMAKE_OBJCOPY                   ${TOOLCHAIN_PREFIX}objcopy)
+set(CMAKE_SIZE                      ${TOOLCHAIN_PREFIX}size)
+
+
+
+
+#项目配置
+# 定义项目名称和使用的语言（C和ASM）
+#   注意配置工程名要在配置工具链之前，否则会使用默认的cl工具链，导致编译失败。
+project(${PROJECT_NAME} C ASM)
+# 编译选项设置
+## 添加可执行文件并设置源文件
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+## 添加构建后自定义命令来显示可执行文件大小  
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${CMAKE_PROJECT_NAME}>)
+## 添加编译器定义
+add_compile_definitions (${PROJECT_DEFINES})
+## 添加包含目录 
+include_directories (${PROJECT_INCLUDES})
+## 设置可执行文件和静态库的后缀
+set (CMAKE_EXECUTABLE_SUFFIX ".elf")
+set (CMAKE_STATIC_LIBRARY_SUFFIX ".a")
+
+# 编译选项设置
+## 根据构建类型设置C编译选项 
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+set (CMAKE_C_FLAGS "-mcpu=cortex-m0plus -std=gnu11 -mfloat-abi=soft --specs=nano.specs -mthumb -Wall -Og -g3 -ggdb -ffunction-sections -fdata-sections -fstack-usage -gstrict-dwarf")
+elseif(${CMAKE_BUILD_TYPE} STREQUAL Release)
+set (CMAKE_C_FLAGS "-mcpu=cortex-m0plus -std=gnu11 -mfloat-abi=soft --specs=nano.specs -mthumb -Wall -Ofast -ffunction-sections -fdata-sections -fstack-usage -gstrict-dwarf")
+endif()
+## 链接选项设置
+set (CMAKE_EXE_LINKER_FLAGS "-nostartfiles -T${LINKER_SCRIPT} --specs=nosys.specs -mthumb -static -lgcc -Wl,-Map=${PROJECT_NAME}.map -Wl,--gc-sections -Wl,--start-group -lc -lm -Wl,--end-group -Wl,--print-memory-usage")
+## 编译汇编文件
+set (CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS} -x assembler-with-cpp")
+
+
+
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>/${PROJECT_NAME}.bin
-    COMMENT "Generating file"
-)
+  TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${PROJECT_NAME}>)
 
-# 清理规则
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
-    "${CMAKE_BINARY_DIR}"
-)
+add_custom_command(
+  TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}>
+          ${PROJECT_NAME}.hex)
+
+add_custom_command(
+  TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}>
+          ${PROJECT_NAME}.bin)
+
+
+##参考文献 
+###C:\ti\mspm0_sdk_2_01_00_03\examples\nortos\LP_MSPM0L1306\driverlib\empty\gcc\makefile
+###STM32CubeMX生成的CMakeLists.txt
