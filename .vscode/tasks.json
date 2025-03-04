@@ -6,8 +6,11 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "-G", "Ninja",
-                "-B", "build"
+                "-DCMAKE_BUILD_TYPE:STRING=Debug",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE",
+                "-S", ".",
+                "-B", "build",
+                "-G", "Ninja"
             ],
             "group": {
                 "kind": "build",
@@ -22,6 +25,7 @@
             "command": "cmake",
             "args": [
                 "--build", "build",
+                "--config", "Debug",
                 "--target", "all"
             ],
             "group": {
